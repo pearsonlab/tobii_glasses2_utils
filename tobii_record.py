@@ -5,6 +5,7 @@
     Based on Tobii SDK
 '''
 
+import threading
 import urllib2
 import json
 import time
@@ -16,6 +17,9 @@ PORT = 49152
 base_url = 'http://' + GLASSES_IP
 timeout = 1
 
+# Keep-alive message content used to request live data and live video streams
+KA_DATA_MSG = "{\"type\": \"live.data.unicast\", \"key\": \"some_GUID\", \"op\": \"start\"}"
+KA_VIDEO_MSG = "{\"type\": \"live.video.unicast\", \"key\": \"some_other_GUID\", \"op\": \"start\"}"
 
 # Create UDP socket
 def mksock(peer):
@@ -27,8 +31,7 @@ def mksock(peer):
 
 # Callback function
 def send_keepalive_msg(socket, msg, peer):
-    global running
-    while running:
+    while True:
         socket.sendto(msg, peer)
         time.sleep(timeout)
 
@@ -108,6 +111,18 @@ def stop_recording(recording_id):
 
 if __name__ == "__main__":
     peer = (GLASSES_IP, PORT)
+
+    # Create socket which will send a keep alive message for the live data stream
+    data_socket = mksock(peer)
+    td = threading.Thread(target=send_keepalive_msg, args=[data_socket, KA_DATA_MSG, peer])
+    td.daemon = True
+    td.start()
+
+    # Create socket which will send a keep alive message for the live video stream
+    video_socket = mksock(peer)
+    tv = threading.Thread(target=send_keepalive_msg, args=[video_socket, KA_VIDEO_MSG, peer])
+    tv.daemon = True
+    tv.start()
 
     try:
         project_id = create_project()
