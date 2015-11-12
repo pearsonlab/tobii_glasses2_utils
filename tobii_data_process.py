@@ -9,13 +9,28 @@ import pandas as pd
 import numpy as np
 
 
+def num_lines(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f, start=1):
+            pass
+    return float(i)
+
 def read_data(json_fname):
     df = pd.DataFrame()
     pts_sync = {}
     vts_sync = {}
+
+    print "Estimating size..."
+    file_len = num_lines(json_fname)
+
+    print "Converting JSON..."
     with open(json_fname) as f:
+        i = 0
         for line in f:
             entry = json.loads(line)
+            i += 1
+            print ('[' + int((i/file_len)*50)*'=' + int((1 - i/file_len)*50)*'-' + ']'
+                  ' %.1f %% Complete\r'%((i/file_len) * 100)),
             if entry['s'] != 0:
                 continue
             elif 'pts' in entry.keys():
@@ -77,17 +92,18 @@ def read_data(json_fname):
     for key in sorted(vts_sync.keys()):
         df.ix[df.index >= key, 'vts_time'] = pd.Series(df.index)
         df.ix[df.index >= key, 'vts_time'] = df.vts_time - key + vts_sync[key]
-
+    print
     return df
 
 
 def cleanseries(data, *args):
     if data.name != 'l_pup_diam' and data.name != 'r_pup_diam':
         return data
+    interp_type = args[0]
     bad = (data == 0)
 
     dd = data.diff()
-    sig = np.median(np.absolute(dd) / 0.67449)
+    sig = np.nanmedian(np.absolute(dd) / 0.67449)
     th = 5
     disc = np.absolute(dd) > th * sig
 
@@ -134,10 +150,12 @@ if __name__ == "__main__":
 
     df = read_data(args.tobii_in)
 
-    if args.clean in (1, 2):
+    if int(args.clean) in (1, 2):
+        print "Cleaning data..."
         df = df.reset_index()
-        df = df.apply(cleanseries, args=[args.clean])
+        df = df.apply(cleanseries, args=[int(args.clean)])
         df = df.set_index('index', drop=True)
     df = add_seconds(df)
 
     df.to_csv(args.csv_out + '.csv')
+    print "Done!"
