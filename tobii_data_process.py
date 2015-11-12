@@ -16,16 +16,13 @@ def read_data(json_fname):
     with open(json_fname) as f:
         for line in f:
             entry = json.loads(line)
-            if 'pts' in entry.keys():
-                pts_sync[entry['ts']] = {}
-                pts_sync[entry['ts']]['PTS time'] = entry['pts']
-                pts_sync[entry['ts']]['Pipeline Version'] = entry['pv']
-                pts_sync[entry['ts']]['PTS validity'] = entry['s']
+            if entry['s'] != 0:
+                continue
+            elif 'pts' in entry.keys():
+                pts_sync[entry['ts']] = entry['pts']
                 continue
             elif 'vts' in entry.keys():
-                vts_sync[entry['ts']] = {}
-                vts_sync[entry['ts']]['VTS time'] = entry['vts']
-                vts_sync[entry['ts']]['VTS validity'] = entry['s']
+                vts_sync[entry['ts']] = entry['vts']
                 continue
             if 'eye' in entry.keys():
                 which_eye = entry['eye'][:1]
@@ -67,6 +64,19 @@ def read_data(json_fname):
                         '3d_gaze_pos_z'] = entry['gp3'][2]
                     df.loc[entry['ts'], 
                         '3d_gaze_pos_val'] = entry['s']
+
+    df['pts_time'] = pd.Series(df.index)
+    df.ix[df.index < min(sorted(pts_sync.keys())), 'pts_time'] = np.nan
+    df['vts_time'] = pd.Series(df.index)
+    df.ix[df.index < min(sorted(vts_sync.keys())), 'vts_time'] = np.nan
+
+    for key in sorted(pts_sync.keys()):
+        df.ix[df.index >= key, 'pts_time'] = pd.Series(df.index)
+        df.ix[df.index >= key, 'pts_time'] = df.pts_time - key + pts_sync[key]
+
+    for key in sorted(vts_sync.keys()):
+        df.ix[df.index >= key, 'vts_time'] = pd.Series(df.index)
+        df.ix[df.index >= key, 'vts_time'] = df.vts_time - key + vts_sync[key]
 
     return df
 
