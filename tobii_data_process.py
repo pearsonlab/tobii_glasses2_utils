@@ -3,76 +3,76 @@
     Process and sort data from Tobii eye tracker recordings into columnar format
 '''
 
+import argparse
 import json
-import cPickle
 import pandas as pd
 import numpy as np
 
 
-def read_data(json_data):
-    organized_data = {}
-    pts_time_sync_data = {}
-    vts_time_sync_data = {}
-    for entry in json_data:
-        if 'pts' in entry.keys():
-            pts_time_sync_data[entry['ts']] = {}
-            pts_time_sync_data[entry['ts']]['PTS time'] = entry['pts']
-            pts_time_sync_data[entry['ts']]['Pipeline Version'] = entry['pv']
-            pts_time_sync_data[entry['ts']]['PTS validity'] = entry['s']
-            continue
-        elif 'vts' in entry.keys():
-            vts_time_sync_data[entry['ts']] = {}
-            vts_time_sync_data[entry['ts']]['VTS time'] = entry['vts']
-            vts_time_sync_data[entry['ts']]['VTS validity'] = entry['s']
-            continue
-        elif entry['ts'] not in organized_data.keys():
-            organized_data[entry['ts']] = {}
-        if 'eye' in entry.keys():
-            which_eye = entry['eye']
-            if 'pc' in entry.keys():
-                organized_data[entry['ts']][
-                    which_eye + ' pupil center x'] = entry['pc'][0]
-                organized_data[entry['ts']][
-                    which_eye + ' pupil center y'] = entry['pc'][1]
-                organized_data[entry['ts']][
-                    which_eye + ' pupil center z'] = entry['pc'][2]
-                organized_data[entry['ts']][
-                    which_eye + ' pupil center validity'] = entry['s']
-            elif 'pd' in entry.keys():
-                organized_data[entry['ts']][
-                    which_eye + ' pupil diameter'] = entry['pd']
-                organized_data[entry['ts']][
-                    which_eye + ' pupil diameter validity'] = entry['s']
-            elif 'gd' in entry.keys():
-                organized_data[entry['ts']][
-                    which_eye + ' gaze direction x'] = entry['gd'][0]
-                organized_data[entry['ts']][
-                    which_eye + ' gaze direction y'] = entry['gd'][1]
-                organized_data[entry['ts']][
-                    which_eye + ' gaze direction z'] = entry['gd'][2]
-                organized_data[entry['ts']][
-                    which_eye + ' gaze direction validity'] = entry['s']
-        else:
-            if 'gp' in entry.keys():
-                organized_data[entry['ts']]['gaze position x'] = entry['gp'][0]
-                organized_data[entry['ts']]['gaze position y'] = entry['gp'][1]
-                organized_data[entry['ts']][
-                    'gaze position validity'] = entry['s']
-            elif 'gp3' in entry.keys():
-                organized_data[entry['ts']][
-                    '3d gaze position x'] = entry['gp3'][0]
-                organized_data[entry['ts']][
-                    '3d gaze position y'] = entry['gp3'][1]
-                organized_data[entry['ts']][
-                    '3d gaze position z'] = entry['gp3'][2]
-                organized_data[entry['ts']][
-                    '3d gaze position validity'] = entry['s']
+def read_data(json_fname):
+    df = pd.DataFrame()
+    pts_sync = {}
+    vts_sync = {}
+    with open(json_fname) as f:
+        for line in f:
+            entry = json.loads(line)
+            if 'pts' in entry.keys():
+                pts_sync[entry['ts']] = {}
+                pts_sync[entry['ts']]['PTS time'] = entry['pts']
+                pts_sync[entry['ts']]['Pipeline Version'] = entry['pv']
+                pts_sync[entry['ts']]['PTS validity'] = entry['s']
+                continue
+            elif 'vts' in entry.keys():
+                vts_sync[entry['ts']] = {}
+                vts_sync[entry['ts']]['VTS time'] = entry['vts']
+                vts_sync[entry['ts']]['VTS validity'] = entry['s']
+                continue
+            if 'eye' in entry.keys():
+                which_eye = entry['eye'][:1]
+                if 'pc' in entry.keys():
+                    df.loc[entry['ts'], 
+                        which_eye + '_pup_cent_x'] = entry['pc'][0]
+                    df.loc[entry['ts'], 
+                        which_eye + '_pup_cent_y'] = entry['pc'][1]
+                    df.loc[entry['ts'], 
+                        which_eye + '_pup_cent_z'] = entry['pc'][2]
+                    df.loc[entry['ts'], 
+                        which_eye + '_pup_cent_val'] = entry['s']
+                elif 'pd' in entry.keys():
+                    df.loc[entry['ts'], 
+                        which_eye + '_pup_diam'] = entry['pd']
+                    df.loc[entry['ts'], 
+                        which_eye + '_pup_diam_val'] = entry['s']
+                elif 'gd' in entry.keys():
+                    df.loc[entry['ts'], 
+                        which_eye + '_gaze_dir_x'] = entry['gd'][0]
+                    df.loc[entry['ts'], 
+                        which_eye + '_gaze_dir_y'] = entry['gd'][1]
+                    df.loc[entry['ts'], 
+                        which_eye + '_gaze_dir_z'] = entry['gd'][2]
+                    df.loc[entry['ts'], 
+                        which_eye + '_gaze_dir_val'] = entry['s']
+            else:
+                if 'gp' in entry.keys():
+                    df.loc[entry['ts'], 'gaze_pos_x'] = entry['gp'][0]
+                    df.loc[entry['ts'], 'gaze_pos_y'] = entry['gp'][1]
+                    df.loc[entry['ts'], 
+                        'gaze_pos_val'] = entry['s']
+                elif 'gp3' in entry.keys():
+                    df.loc[entry['ts'], 
+                        '3d_gaze_pos_x'] = entry['gp3'][0]
+                    df.loc[entry['ts'], 
+                        '3d_gaze_pos_y'] = entry['gp3'][1]
+                    df.loc[entry['ts'], 
+                        '3d_gaze_pos_z'] = entry['gp3'][2]
+                    df.loc[entry['ts'], 
+                        '3d_gaze_pos_val'] = entry['s']
 
-    return organized_data, pts_time_sync_data, vts_time_sync_data
+    return df
 
 
 def cleanseries(data, *args):
-    if data.name == 'index':
+    if data.name != 'l_pup_diam' and data.name != 'r_pup_diam':
         return data
     bad = (data == 0)
 
@@ -115,33 +115,19 @@ def add_seconds(df):
     return df
 
 if __name__ == "__main__":
-    datafile_name = str(raw_input("Please enter the name of the data file\n"))
-    # datafile_name = 'test1data.json' # test data
-    json_data = []  # creates array to hold dicts from json data
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tobii_in', help='Location of tobii JSON file to convert')
+    parser.add_argument('csv_out', help='Name of csv file to output')
+    parser.add_argument('--clean', default=0, help='Flag to clean pupil size data, 1 for linear interpolation,',
+                                                   '2 for polynomial interpolation. Default is no cleaning.')
+    args = parser.parse_args()
 
-    # opens json file and stores each line (dict) in an array: json_data
-    with open(str(datafile_name)) as json_data_file:
-        for line in json_data_file:
-            json_data.append(json.loads(''.join(line)))
+    df = read_data(args.tobii_in)
 
-    organized_data, pts_time_sync_data, vts_time_sync_data = read_data(
-        json_data)
-    # output = open('organized_test1data.pkl', 'wb')
-    # cPickle.dump(organized_data, output)
-    # cPickle.dump(vts_time_sync_data, output)
-    # cPickle.dump(pts_time_sync_data, output)
-
-    df = pd.DataFrame.from_dict(organized_data, orient='index')
-    should_clean = str(raw_input("Would you like to clean the data? (y/n): "))
-    if should_clean == 'y':
-        interp_type = int(
-            raw_input("Linear (1) or Polynomial (2) interpolation? "))
+    if args.clean in (1, 2):
         df = df.reset_index()
-        df = df.apply(cleanseries, args=[interp_type])
+        df = df.apply(cleanseries, args=[args.clean])
         df = df.set_index('index', drop=True)
     df = add_seconds(df)
-    csv_name = str(raw_input("Please enter the desired .csv file name\n"))
-    df.to_csv(csv_name + '.csv')
 
-    df = pd.DataFrame.from_dict(vts_time_sync_data, orient='index')
-    df.to_csv(csv_name + '_video_sync.csv')
+    df.to_csv(args.csv_out + '.csv')
