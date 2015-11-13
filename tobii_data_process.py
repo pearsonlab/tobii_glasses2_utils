@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 '''
-    Process and sort data from Tobii eye tracker recordings into columnar format
+    Process and sort sequential JSON data from Tobii eye tracker recordings
+    into columnar format.  Also included option to clean and interpolate
+    data for pupil diameter columns.
 '''
 
 import argparse
