@@ -17,6 +17,7 @@ def num_lines(fname):
             pass
     return float(i)
 
+
 def read_data(json_fname):
     df = pd.DataFrame()
     pts_sync = {}
@@ -31,8 +32,8 @@ def read_data(json_fname):
         for line in f:
             entry = json.loads(line)
             i += 1
-            print ('[' + int((i/file_len)*50)*'=' + int((1 - i/file_len)*50)*'-' + ']'
-                  ' %.1f %% Complete\r'%((i/file_len) * 100)),
+            print ('[' + int((i / file_len) * 50) * '=' + int((1 - i / file_len) * 50) * '-' + ']'
+                   ' %.1f %% Complete\r' % ((i / file_len) * 100)),
             if entry['s'] != 0:
                 continue
             elif 'pts' in entry.keys():
@@ -44,43 +45,43 @@ def read_data(json_fname):
             if 'eye' in entry.keys():
                 which_eye = entry['eye'][:1]
                 if 'pc' in entry.keys():
-                    df.loc[entry['ts'], 
-                        which_eye + '_pup_cent_x'] = entry['pc'][0]
-                    df.loc[entry['ts'], 
-                        which_eye + '_pup_cent_y'] = entry['pc'][1]
-                    df.loc[entry['ts'], 
-                        which_eye + '_pup_cent_z'] = entry['pc'][2]
-                    df.loc[entry['ts'], 
-                        which_eye + '_pup_cent_val'] = entry['s']
+                    df.loc[entry['ts'],
+                           which_eye + '_pup_cent_x'] = entry['pc'][0]
+                    df.loc[entry['ts'],
+                           which_eye + '_pup_cent_y'] = entry['pc'][1]
+                    df.loc[entry['ts'],
+                           which_eye + '_pup_cent_z'] = entry['pc'][2]
+                    df.loc[entry['ts'],
+                           which_eye + '_pup_cent_val'] = entry['s']
                 elif 'pd' in entry.keys():
-                    df.loc[entry['ts'], 
-                        which_eye + '_pup_diam'] = entry['pd']
-                    df.loc[entry['ts'], 
-                        which_eye + '_pup_diam_val'] = entry['s']
+                    df.loc[entry['ts'],
+                           which_eye + '_pup_diam'] = entry['pd']
+                    df.loc[entry['ts'],
+                           which_eye + '_pup_diam_val'] = entry['s']
                 elif 'gd' in entry.keys():
-                    df.loc[entry['ts'], 
-                        which_eye + '_gaze_dir_x'] = entry['gd'][0]
-                    df.loc[entry['ts'], 
-                        which_eye + '_gaze_dir_y'] = entry['gd'][1]
-                    df.loc[entry['ts'], 
-                        which_eye + '_gaze_dir_z'] = entry['gd'][2]
-                    df.loc[entry['ts'], 
-                        which_eye + '_gaze_dir_val'] = entry['s']
+                    df.loc[entry['ts'],
+                           which_eye + '_gaze_dir_x'] = entry['gd'][0]
+                    df.loc[entry['ts'],
+                           which_eye + '_gaze_dir_y'] = entry['gd'][1]
+                    df.loc[entry['ts'],
+                           which_eye + '_gaze_dir_z'] = entry['gd'][2]
+                    df.loc[entry['ts'],
+                           which_eye + '_gaze_dir_val'] = entry['s']
             else:
                 if 'gp' in entry.keys():
                     df.loc[entry['ts'], 'gaze_pos_x'] = entry['gp'][0]
                     df.loc[entry['ts'], 'gaze_pos_y'] = entry['gp'][1]
-                    df.loc[entry['ts'], 
-                        'gaze_pos_val'] = entry['s']
+                    df.loc[entry['ts'],
+                           'gaze_pos_val'] = entry['s']
                 elif 'gp3' in entry.keys():
-                    df.loc[entry['ts'], 
-                        '3d_gaze_pos_x'] = entry['gp3'][0]
-                    df.loc[entry['ts'], 
-                        '3d_gaze_pos_y'] = entry['gp3'][1]
-                    df.loc[entry['ts'], 
-                        '3d_gaze_pos_z'] = entry['gp3'][2]
-                    df.loc[entry['ts'], 
-                        '3d_gaze_pos_val'] = entry['s']
+                    df.loc[entry['ts'],
+                           '3d_gaze_pos_x'] = entry['gp3'][0]
+                    df.loc[entry['ts'],
+                           '3d_gaze_pos_y'] = entry['gp3'][1]
+                    df.loc[entry['ts'],
+                           '3d_gaze_pos_z'] = entry['gp3'][2]
+                    df.loc[entry['ts'],
+                           '3d_gaze_pos_val'] = entry['s']
 
     df['pts_time'] = np.array(df.index)
     df.ix[df.index < min(sorted(pts_sync.keys())), 'pts_time'] = np.nan
@@ -88,11 +89,13 @@ def read_data(json_fname):
     df.ix[df.index < min(sorted(vts_sync.keys())), 'vts_time'] = np.nan
 
     for key in sorted(pts_sync.keys()):
-        df.ix[df.index >= key, 'pts_time'] = np.array(df.index)[df.index >= key]
+        df.ix[df.index >= key, 'pts_time'] = np.array(
+            df.index)[df.index >= key]
         df.ix[df.index >= key, 'pts_time'] = df.pts_time - key + pts_sync[key]
 
     for key in sorted(vts_sync.keys()):
-        df.ix[df.index >= key, 'vts_time'] = np.array(df.index)[df.index >= key]
+        df.ix[df.index >= key, 'vts_time'] = np.array(
+            df.index)[df.index >= key]
         df.ix[df.index >= key, 'vts_time'] = df.vts_time - key + vts_sync[key]
     print
     return df
@@ -136,7 +139,6 @@ def cleanseries(data, *args):
 
 # adds 'seconds' column that converts tobii timestamps to seconds
 def add_seconds(df):
-    sample_rate = 30.0
     df = df.reset_index()
     df['seconds'] = (df['index'] - df['index'][0]) / 1000000.0
     df = df.set_index('index', drop=True)
@@ -144,7 +146,8 @@ def add_seconds(df):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('tobii_in', help='Location of tobii JSON file to convert')
+    parser.add_argument(
+        'tobii_in', help='Location of tobii JSON file to convert')
     parser.add_argument('csv_out', help='Name of csv file to output')
     parser.add_argument('--clean', default=0, help='Flag to clean pupil size data, 1 for linear interpolation, ' +
                                                    '2 for polynomial interpolation. Default is no cleaning.')
