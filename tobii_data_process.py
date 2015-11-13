@@ -80,17 +80,17 @@ def read_data(json_fname):
                     df.loc[entry['ts'], 
                         '3d_gaze_pos_val'] = entry['s']
 
-    df['pts_time'] = pd.Series(df.index)
+    df['pts_time'] = np.array(df.index)
     df.ix[df.index < min(sorted(pts_sync.keys())), 'pts_time'] = np.nan
-    df['vts_time'] = pd.Series(df.index)
+    df['vts_time'] = np.array(df.index)
     df.ix[df.index < min(sorted(vts_sync.keys())), 'vts_time'] = np.nan
 
     for key in sorted(pts_sync.keys()):
-        df.ix[df.index >= key, 'pts_time'] = pd.Series(df.index)
+        df.ix[df.index >= key, 'pts_time'] = np.array(df.index)[df.index >= key]
         df.ix[df.index >= key, 'pts_time'] = df.pts_time - key + pts_sync[key]
 
     for key in sorted(vts_sync.keys()):
-        df.ix[df.index >= key, 'vts_time'] = pd.Series(df.index)
+        df.ix[df.index >= key, 'vts_time'] = np.array(df.index)[df.index >= key]
         df.ix[df.index >= key, 'vts_time'] = df.vts_time - key + vts_sync[key]
     print
     return df
