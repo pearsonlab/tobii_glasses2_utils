@@ -100,6 +100,20 @@ def read_data(json_fname):
     print
     return df
 
+def window_diff(data, width):
+    """
+    Takes a series and calculates a diff between each value and the mean of
+    values surrounding it (dictated by width) If this window extends past the
+    data's indices, it will ignore those values.
+    """
+    diff = data.copy()
+    for i in range(len(data)):
+        if i < width:
+            win_m = (data[:i].mean() + data[i+1:i+1+width].mean())/2
+        else:
+            win_m = (data[i-width:i].mean() + data[i+1:i+1+width].mean())/2
+        diff[i] -= win_m
+    return diff
 
 def cleanseries(data, *args):
     if data.name != 'l_pup_diam' and data.name != 'r_pup_diam':
@@ -107,7 +121,7 @@ def cleanseries(data, *args):
     interp_type = args[0]
     bad = (data == 0)
 
-    dd = data.diff()
+    dd = window_diff(data, 10)
     sig = np.nanmedian(np.absolute(dd) / 0.67449)
     th = 5
     disc = np.absolute(dd) > th * sig
@@ -123,7 +137,7 @@ def cleanseries(data, *args):
 
     allbad = np.union1d(to_remove, isolated)
 
-    newdat = pd.Series(data)
+    newdat = data.copy()
     newdat[allbad] = np.nan
 
     goodinds = np.nonzero(np.invert(np.isnan(newdat)))[0]
