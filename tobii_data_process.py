@@ -162,7 +162,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'tobii_in', help='Location of tobii JSON file to convert')
-    parser.add_argument('csv_out', help='Name of csv file to output')
     parser.add_argument('--clean', default=0, help='Flag to clean pupil size data, 1 for linear interpolation, ' +
                                                    '2 for polynomial interpolation. Default is no cleaning.')
     args = parser.parse_args()
@@ -176,5 +175,5 @@ if __name__ == "__main__":
         df = df.set_index('index', drop=True)
     df = add_seconds(df)
 
-    df.to_csv(args.csv_out + '.csv')
+    df.to_csv(args.tobii_in.split('.')[0] + '.csv')
     print "Done!"
