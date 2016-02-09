@@ -22,6 +22,7 @@ def read_data(json_fname):
     df = pd.DataFrame()
     pts_sync = {}
     vts_sync = {}
+    pulse_sync = {}
 
     print "Estimating size..."
     file_len = num_lines(json_fname)
@@ -36,6 +37,8 @@ def read_data(json_fname):
                    ' %.1f %% Complete\r' % ((i / file_len) * 100)),
             if entry['s'] != 0:
                 continue
+            elif 'dir' in entry.keys():
+                pulse_sync[entry['ts']] = entry['sig']
             elif 'pts' in entry.keys():
                 pts_sync[entry['ts']] = entry['pts']
                 continue
@@ -98,7 +101,7 @@ def read_data(json_fname):
             df.index)[df.index >= key]
         df.ix[df.index >= key, 'vts_time'] = df.vts_time - key + vts_sync[key]
     print
-    return df
+    return df, pulse_sync
 
 def window_diff(data, width):
     """
@@ -166,7 +169,7 @@ if __name__ == "__main__":
                                                    '2 for polynomial interpolation. Default is no cleaning.')
     args = parser.parse_args()
 
-    df = read_data(args.tobii_in)
+    df, pulses = read_data(args.tobii_in)
 
     if int(args.clean) in (1, 2):
         print "Cleaning data..."
@@ -176,4 +179,8 @@ if __name__ == "__main__":
     df = add_seconds(df)
 
     df.to_csv(args.tobii_in.split('.')[0] + '.csv')
+    if len(pulses) > 0:
+        with open(args.tobii_in.split('.')[0] + '_sync_pulses.json', 'w') as f:
+            json.dump(pulses, f)
+
     print "Done!"
