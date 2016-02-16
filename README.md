@@ -1,14 +1,17 @@
 # tobii_glasses2_utils
 Various utilities to record and process Tobii Glasses 2 eye-tracking data
 
-Dependencies (that aren't automtically included in the Anaconda Python distribution):
+Installing Dependencies (that aren't automtically included in the Anaconda Python distribution):
 
-**INSTALL THESE IN ORDER**
+**DO THESE IN ORDER**
 
 1. ffmpeg
     * Can be installed with homebrew on OS X. Just do `brew install ffmpeg`
 1. OpenCV
     * Must install the version with ffmpeg enabled, available by simply entering `conda install -c https://conda.anaconda.org/shariqiqbal2810 opencv`
+1. Run ffmpeg_test.py in order to ensure that everything installed correctly
+    * It should produce a video called 'test.m4v' that is simply a black
+screen turning white.
 
 ## tobii_data_process.py
 
