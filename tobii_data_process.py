@@ -161,17 +161,11 @@ def add_seconds(df):
     df = df.set_index('index', drop=True)
     return df
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'tobii_in', help='Location of tobii JSON file to convert')
-    parser.add_argument('--clean', default=0, help='Flag to clean pupil size data, 1 for linear interpolation, ' +
-                                                   '2 for polynomial interpolation. Default is no cleaning.')
-    args = parser.parse_args()
 
-    df, pulses = read_data(args.tobii_in)
+def process(tobii_in, clean):
+    df, pulses = read_data(tobii_in)
 
-    if int(args.clean) in (1, 2):
+    if int(clean) in (1, 2):
         print "Cleaning data..."
         df = df.reset_index()
         df = df.apply(cleanseries, args=[int(args.clean)])
@@ -184,3 +178,13 @@ if __name__ == "__main__":
             json.dump(pulses, f)
 
     print "Done!"
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'tobii_in', help='Location of tobii JSON file to convert')
+    parser.add_argument('--clean', default=0, help='Flag to clean pupil size data, 1 for linear interpolation, ' +
+                                                   '2 for polynomial interpolation. Default is no cleaning.')
+    args = parser.parse_args()
+
+    process(args.tobii_in, args.clean)
