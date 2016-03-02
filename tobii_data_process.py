@@ -177,9 +177,9 @@ def process(tobii_in, clean, verbose=True):
         df = df.set_index('index', drop=True)
     df = add_seconds(df)
 
-    df.to_csv(args.tobii_in.split('.')[0] + '.csv')
+    df.to_csv(tobii_in.split('.')[0] + '.csv')
     if len(pulses) > 0:
-        with open(args.tobii_in.split('.')[0] + '_sync_pulses.json', 'w') as f:
+        with open(tobii_in.split('.')[0] + '_sync_pulses.json', 'w') as f:
             json.dump(pulses, f)
     if verbose:
         print "Done!"
