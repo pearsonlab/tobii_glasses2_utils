@@ -18,23 +18,26 @@ def num_lines(fname):
     return float(i)
 
 
-def read_data(json_fname):
+def read_data(json_fname, verbose=True):
     df = pd.DataFrame()
     pts_sync = {}
     vts_sync = {}
     pulse_sync = {}
 
-    print "Estimating size..."
+    if verbose:
+        print "Estimating size..."
     file_len = num_lines(json_fname)
 
-    print "Converting JSON..."
+    if verbose:
+        print "Converting JSON..."
     with open(json_fname) as f:
         i = 0
         for line in f:
             entry = json.loads(line)
             i += 1
-            print ('[' + int((i / file_len) * 50) * '=' + int((1 - i / file_len) * 50) * '-' + ']'
-                   ' %.1f %% Complete\r' % ((i / file_len) * 100)),
+            if verbose:
+                print ('[' + int((i / file_len) * 50) * '=' + int((1 - i / file_len) * 50) * '-' + ']'
+                       ' %.1f %% Complete\r' % ((i / file_len) * 100)),
             if entry['s'] != 0:
                 continue
             elif 'dir' in entry.keys():
@@ -100,7 +103,8 @@ def read_data(json_fname):
         df.ix[df.index >= key, 'vts_time'] = np.array(
             df.index)[df.index >= key]
         df.ix[df.index >= key, 'vts_time'] = df.vts_time - key + vts_sync[key]
-    print
+    if verbose:
+        print
     return df, pulse_sync
 
 def window_diff(data, width):
@@ -162,11 +166,12 @@ def add_seconds(df):
     return df
 
 
-def process(tobii_in, clean):
-    df, pulses = read_data(tobii_in)
+def process(tobii_in, clean, verbose=True):
+    df, pulses = read_data(tobii_in, verbose=verbose)
 
     if int(clean) in (1, 2):
-        print "Cleaning data..."
+        if verbose:
+            print "Cleaning data..."
         df = df.reset_index()
         df = df.apply(cleanseries, args=[int(args.clean)])
         df = df.set_index('index', drop=True)
@@ -176,8 +181,8 @@ def process(tobii_in, clean):
     if len(pulses) > 0:
         with open(args.tobii_in.split('.')[0] + '_sync_pulses.json', 'w') as f:
             json.dump(pulses, f)
-
-    print "Done!"
+    if verbose:
+        print "Done!"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
