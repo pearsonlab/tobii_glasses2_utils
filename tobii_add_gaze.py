@@ -9,7 +9,7 @@ import pandas as pd
 import os
 
 
-def process(gaze_file, infile, outfile):
+def process(gaze_file, infile, outfile, verbose=True):
     gaze = pd.read_csv(gaze_file)
     # only start tracking eyes once video starts
     gaze = gaze[~gaze.vts_time.isnull()]
@@ -33,13 +33,15 @@ def process(gaze_file, infile, outfile):
     gaze_y = gaze['gaze_pos_y'].values
     vts = gaze['vts_time'].values / 1000.
 
-    print "Adding gaze..."
+    if verbose:
+        print "Adding gaze..."
     while(vid.isOpened()):
         frame_num = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES) + 1
         vid_time = vid.get(cv2.cv.CV_CAP_PROP_POS_MSEC)
         prog_ratio = (frame_num * 1.0 / tot_frames)
-        print ('[' + int(prog_ratio * 50) * '=' + int((1 - prog_ratio) * 50) * '-' + ']'
-               ' %.1f %% Complete\r' % (prog_ratio * 100)),
+        if verbose:
+            print ('[' + int(prog_ratio * 50) * '=' + int((1 - prog_ratio) * 50) * '-' + ']'
+                   ' %.1f %% Complete\r' % (prog_ratio * 100)),
         ret, frame = vid.read()
         if ret:
             # make sure two frames are written per one original frame (to
@@ -68,8 +70,9 @@ def process(gaze_file, infile, outfile):
         if i + 1 < len(vts):
             while vts[i + 1] < vid_time:
                 i += 1
-
-    print
+    if verbose:
+        print
+        print "Done!"
     vid.release()
     out.release()
 
@@ -81,4 +84,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     process(args.data, args.video, args.out_video)
-    print "Done!"
