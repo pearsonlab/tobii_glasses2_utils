@@ -110,7 +110,7 @@ def track_objects(vid_path, gaze, matches, verbose=True):
                                     trans_pos[1] <= match['size'][1] and trans_pos[1] >= 0):
                                 cv2.circle(img_cp, trans_pos, 8, [255, 0, 0], -2)  # draw blue circle on current frame
                                 cv2.circle(match['img'], trans_pos, 8, [0, 255, 0], 2)  # draw green circle as trace
-                            match['obj_gaze'][i, :] = trans_pos
+                            match['obj_gaze'][ind, :] = trans_pos
                         match['video'].write(img_cp)
                 ind += 1
                 if ind % 10 == 0 and verbose:
