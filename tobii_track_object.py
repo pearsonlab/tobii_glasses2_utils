@@ -114,7 +114,7 @@ def track_objects(vid_path, gaze, matches, verbose=True):
                         match['video'].write(img_cp)
                 ind += 1
                 if ind % 10 == 0 and verbose:
-                    sys.stdout.write('\r' + '%6.2f%%' % ((i/tot)*100))
+                    sys.stdout.write('\r' + '%6.2f%%' % ((ind/tot)*100))
                     sys.stdout.flush()
 
     vid.release()
