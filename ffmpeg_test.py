@@ -9,8 +9,10 @@ import numpy as np
 def main():
     fourcc = cv2.cv.CV_FOURCC(*'mp4v')
     out = cv2.VideoWriter()
-    out.open('test.m4v', fourcc,
-             30, (200, 200), True)
+    ret = out.open('test.m4v', fourcc,
+                   30, (200, 200), True)
+    if not ret:
+        raise Exception('Unable to write video files')
     img = np.ones((200, 200, 3), dtype=np.uint8)
     for i in range(255):
         out.write(img * i)
