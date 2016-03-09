@@ -6,8 +6,13 @@ screen turning white.
 import cv2
 import numpy as np
 
+OPENCV3 = (cv2.__version__.split('.')[0] == '3')
+
 def main():
-    fourcc = cv2.cv.CV_FOURCC(*'mp4v')
+    if OPENCV3:
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    else:
+        fourcc = cv2.cv.CV_FOURCC(*'mp4v')
     out = cv2.VideoWriter()
     ret = out.open('test.m4v', fourcc,
                    30, (200, 200), True)
