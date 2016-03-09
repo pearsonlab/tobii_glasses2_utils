@@ -10,6 +10,8 @@ import pandas as pd
 import sys
 import os
 
+OPENCV3 = (cv2.__version__.split('.')[0] == '3')
+
 
 def object_find(match_sift, frame, MIN_MATCH_COUNT):
     '''
@@ -18,8 +20,10 @@ def object_find(match_sift, frame, MIN_MATCH_COUNT):
 
     This code is based on the OpenCV feature detection tutorial
     '''
-
-    sift = cv2.SIFT()
+    if OPENCV3:
+        sift = cv2.xfeatures2d.SIFT_create()
+    else:
+        sift = cv2.SIFT()
     kp1, des1 = match_sift
     kp2, des2 = sift.detectAndCompute(frame, None)
 
@@ -59,14 +63,22 @@ def track_objects(vid_path, gaze, matches, verbose=True):
     gaze = pd.read_csv(gaze)
     gaze = gaze[~gaze.vts_time.isnull()]  # only start tracking eyes once video starts
 
-    sift = cv2.SIFT()
-    fourcc = cv2.cv.CV_FOURCC(*'mp4v')
     matches = [{'path': m} for m in matches]
 
     vid = cv2.VideoCapture(vid_path)
 
+    if OPENCV3:
+        sift = cv2.xfeatures2d.SIFT_create()
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        tot = vid.get(cv2.CAP_PROP_FRAME_COUNT)*2.0
+        fps = vid.get(cv2.CAP_PROP_FPS)*2
+    else:
+        sift = cv2.SIFT()
+        fourcc = cv2.cv.CV_FOURCC(*'mp4v')
+        tot = vid.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)*2.0
+        fps = vid.get(cv2.cv.CV_CAP_PROP_FPS)*2
+
     ind = 1
-    tot = vid.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)*2.0
 
     # get gaze values
     gaze_val = gaze['gaze_pos_val'].values
@@ -86,13 +98,16 @@ def track_objects(vid_path, gaze, matches, verbose=True):
                               matches[i]['img'].shape[0])
         matches[i]['video'] = cv2.VideoWriter()
         matches[i]['video'].open(outfile, fourcc,
-                                 vid.get(cv2.cv.CV_CAP_PROP_FPS)*2,
+                                 fps,
                                  matches[i]['size'], True)
         # x, y pairs of gaze locations over object. Init as -1
         matches[i]['obj_gaze'] = np.ones((len(gaze_x), 2)) * -1
 
     while vid.isOpened():
-        vid_time = vid.get(cv2.cv.CV_CAP_PROP_POS_MSEC)
+        if OPENCV3:
+            vid_time = vid.get(cv2.CAP_PROP_POS_MSEC)
+        else:
+            vid_time = vid.get(cv2.cv.CV_CAP_PROP_POS_MSEC)
         ret, frame = vid.read()
         if ret:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

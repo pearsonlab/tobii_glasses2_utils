@@ -8,6 +8,7 @@ import cv2
 import pandas as pd
 import os
 
+OPENCV3 = (cv2.__version__.split('.')[0] == '3')
 
 def process(gaze_file, infile, outfile, verbose=True):
     gaze = pd.read_csv(gaze_file)
@@ -18,14 +19,19 @@ def process(gaze_file, infile, outfile, verbose=True):
     vid = cv2.VideoCapture(infile)
 
     size = (1920, 1080)
-    fourcc = cv2.cv.CV_FOURCC(*'mp4v')
+    if OPENCV3:
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = vid.get(cv2.CAP_PROP_FPS)
+        tot_frames = vid.get(cv2.CAP_PROP_FRAME_COUNT)
+    else:
+        fourcc = cv2.cv.CV_FOURCC(*'mp4v')
+        fps = vid.get(cv2.cv.CV_CAP_PROP_FPS)
+        tot_frames = vid.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
     out = cv2.VideoWriter()
     out.open(outfile + '.m4v', fourcc,
-             vid.get(cv2.cv.CV_CAP_PROP_FPS) * 2, size, True)
+             fps * 2, size, True)
     # note doubled framerate b/c eye tracking is at double the sampling rate
     # of video
-
-    tot_frames = vid.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
 
     i = 0
     gaze_val = gaze['gaze_pos_val'].values
@@ -36,8 +42,12 @@ def process(gaze_file, infile, outfile, verbose=True):
     if verbose:
         print "Adding gaze..."
     while(vid.isOpened()):
-        frame_num = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES) + 1
-        vid_time = vid.get(cv2.cv.CV_CAP_PROP_POS_MSEC)
+        if OPENCV3:
+            frame_num = vid.get(cv2.CAP_PROP_POS_FRAMES) + 1
+            vid_time = vid.get(cv2.CAP_PROP_POS_MSEC)
+        else:
+            frame_num = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES) + 1
+            vid_time = vid.get(cv2.cv.CV_CAP_PROP_POS_MSEC)
         prog_ratio = (frame_num * 1.0 / tot_frames)
         if verbose:
             print ('[' + int(prog_ratio * 50) * '=' + int((1 - prog_ratio) * 50) * '-' + ']'
