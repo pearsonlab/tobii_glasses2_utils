@@ -28,10 +28,14 @@ def object_find(match_sift, frame, MIN_MATCH_COUNT):
     kp2, des2 = sift.detectAndCompute(frame, None)
 
     FLANN_INDEX_KDTREE = 0
+    num_matches = 2
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
     flann = cv2.FlannBasedMatcher(index_params, search_params)
-    matches = flann.knnMatch(des1, des2, k=2)
+    if len(kp1) >= num_matches and len(kp2) >= num_matches:
+        matches = flann.knnMatch(des1, des2, k=num_matches)
+    else:
+        return None
 
     good = []
     for m, n in matches:
