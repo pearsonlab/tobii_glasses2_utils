@@ -117,26 +117,43 @@ def track_objects(vid_path, gaze, matches, verbose=True):
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             for i in range(len(matches)):
                 matches[i]['M'] = object_find(matches[i]['sift'], frame, 50)
-            while vts[ind] < vid_time:
-                if gaze_val[ind] == 0:  # if gaze point is valid
-                    org_pos = np.array((1920*gaze_x[ind], 1080*gaze_y[ind])).reshape(-1, 1, 2)
+            # 2 frames per original frame
+            for j in range(2):
+                # make sure eye tracking data exists for current frame
+                if ind < len(vts):
+                    # make sure eye tracking data is not ahead of video
+                    if vts[ind] <= vid_time:
+                        if gaze_val[ind] == 0:  # if gaze point is valid
+                            org_pos = np.array((1920*gaze_x[ind], 1080*gaze_y[ind])).reshape(-1, 1, 2)
+                            for match in matches:  # draw on every match image
+                                img_cp = match['img'].copy()
+                                if match['M'] is not None:
+                                    trans_pos = cv2.perspectiveTransform(org_pos, match['M'])
+                                    trans_pos = tuple(np.int32(trans_pos[0, 0]))
+                                    if (trans_pos[0] <= match['size'][0] and trans_pos[0] >= 0 and
+                                            trans_pos[1] <= match['size'][1] and trans_pos[1] >= 0):
+                                        cv2.circle(img_cp, trans_pos, 8, [255, 0, 0], -2)  # draw blue circle on current frame
+                                        cv2.circle(match['img'], trans_pos, 8, [0, 255, 0], 2)  # draw green circle as trace
+                                    match['obj_gaze'][ind, :] = trans_pos
+                                match['video'].write(img_cp)
+                        ind += 1
+                    else:
+                        for match in matches:
+                            match['video'].write(match['img'])
+                else:
                     for match in matches:
-                        img_cp = match['img'].copy()
-                        if match['M'] is not None:
-                            trans_pos = cv2.perspectiveTransform(org_pos, match['M'])
-                            trans_pos = tuple(np.int32(trans_pos[0, 0]))
-                            if (trans_pos[0] <= match['size'][0] and trans_pos[0] >= 0 and
-                                    trans_pos[1] <= match['size'][1] and trans_pos[1] >= 0):
-                                cv2.circle(img_cp, trans_pos, 8, [255, 0, 0], -2)  # draw blue circle on current frame
-                                cv2.circle(match['img'], trans_pos, 8, [0, 255, 0], 2)  # draw green circle as trace
-                            match['obj_gaze'][ind, :] = trans_pos
-                        match['video'].write(img_cp)
-                ind += 1
+                        match['video'].write(match['img'])
                 if ind % 10 == 0 and verbose:
                     sys.stdout.write('\r' + '%6.2f%%' % ((ind/tot)*100))
                     sys.stdout.flush()
         else:
             break
+        # catch up gaze data in case it's behind
+        try:
+            while vts[ind + 1] < vid_time:
+                ind += 1
+        except IndexError:  # in case vts reaches end
+            pass
 
     vid.release()
     for i in range(len(matches)):
