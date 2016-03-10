@@ -135,6 +135,8 @@ def track_objects(vid_path, gaze, matches, verbose=True):
                 if ind % 10 == 0 and verbose:
                     sys.stdout.write('\r' + '%6.2f%%' % ((ind/tot)*100))
                     sys.stdout.flush()
+        else:
+            break
 
     vid.release()
     for i in range(len(matches)):
