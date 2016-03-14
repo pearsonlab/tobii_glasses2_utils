@@ -12,7 +12,7 @@ import time
 import socket
 import sys
 
-GLASSES_IP = "192.168.71.50"  # IPv4 address
+GLASSES_IP = socket.gethostbyname(socket.gethostname())  # IPv4 address
 PORT = 49152
 base_url = 'http://' + GLASSES_IP
 timeout = 1
