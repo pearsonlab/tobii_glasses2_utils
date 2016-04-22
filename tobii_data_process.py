@@ -116,9 +116,9 @@ def window_diff(data, width):
     diff = data.copy()
     for i in range(len(data)):
         if i < width:
-            win_m = (data[:i].mean() + data[i+1:i+1+width].mean())/2
+            win_m = (np.nanmean(data[:i]) + np.nanmean(data[i+1:i+1+width]))/2
         else:
-            win_m = (data[i-width:i].mean() + data[i+1:i+1+width].mean())/2
+            win_m = (np.nanmean(data[i-width:i]) + np.nanmean(data[i+1:i+1+width]))/2
         diff[i] -= win_m
     return diff
 
